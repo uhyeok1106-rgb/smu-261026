@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 페이지를 인터넷에 올리기</title>
+<meta name="description" content="Claude Artifacts로 만든 페이지를 GitHub Pages로 배포하는 선수학습 5일차 수업 정리">
+<style>
+/* ===== 색상 토큰: 밝은 화면 기본값 ===== */
+:root {
+  --bg: #f7f7fc;
+  --surface: #ffffff;
+  --fg: #1e1b3a;
+  --muted: #5d5a7a;
+  --line: #e2e1f0;
+  --accent: #6366f1;
+  --accent-strong: #4f46e5;
+  --accent-soft: #eef0ff;
+  --accent-fg: #ffffff;
+  --good: #15803d;
+  --good-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --code-bg: #f1f0fa;
+  --radius: 14px;
+  --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+}
+/* ===== 다크 모드: 기기 설정을 따라감 ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12111f; --surface: #1c1b2e; --fg: #ecebfa; --muted: #a6a4c4; --line: #2f2d48;
+    --accent: #8b8dff; --accent-strong: #a5a7ff; --accent-soft: #26254a; --accent-fg: #12111f;
+    --good: #4ade80; --good-soft: #14321f; --warn: #fbbf24; --warn-soft: #3a2c0c;
+    --bad: #f87171; --bad-soft: #3b1717; --code-bg: #26253c;
+    color-scheme: dark;
+  }
+}
+
+/* ===== 기본 스타일 ===== */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font); font-size: 16px; line-height: 1.75;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+section { padding: 40px 0 8px; }
+h1, h2, h3 { line-height: 1.35; margin: 0; }
+h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+h2 .num { color: var(--accent); margin-right: 6px; }
+.sub { color: var(--muted); margin: 0 0 18px; }
+code {
+  font-family: "Consolas", "D2Coding", ui-monospace, monospace; font-size: .92em;
+  background: var(--code-bg); padding: 1px 6px; border-radius: 6px;
+}
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+
+/* ===== 상단 진행 바 (화면 위에 고정) ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+}
+.topbar .wrap { display: flex; align-items: center; gap: 12px; padding-top: 10px; padding-bottom: 10px; font-size: .9rem; }
+.topbar strong { white-space: nowrap; }
+.bar { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.pct { font-weight: 800; min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ===== 첫 화면 ===== */
+.hero { padding: 48px 0 16px; }
+.eyebrow { color: var(--accent); font-weight: 800; letter-spacing: .08em; font-size: .85rem; margin: 0 0 8px; }
+.hero h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 900; letter-spacing: -.02em; }
+.hero h1 span { color: var(--accent); }
+.lead { font-size: 1.1rem; color: var(--muted); margin: 14px 0 22px; }
+.url {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+  background: var(--surface); border: 1.5px dashed var(--accent); border-radius: 12px;
+  padding: 10px 14px; font-family: "Consolas", ui-monospace, monospace; font-size: .95rem;
+}
+.url b { color: var(--accent); }
+.analogy { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.analogy .card { display: flex; gap: 12px; align-items: flex-start; }
+.emoji { font-size: 1.8rem; line-height: 1; flex: none; }
+.analogy p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+
+/* ===== 흐름 다이어그램 ===== */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.flow .node {
+  flex: 1 1 130px; text-align: center; background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: 12px; padding: 14px 8px;
+}
+.flow .node .emoji { display: block; margin-bottom: 4px; }
+.flow .node b { display: block; font-size: .95rem; }
+.flow .node small { color: var(--muted); }
+.flow .node.goal { border-color: var(--accent); background: var(--accent-soft); }
+.flow .arrow { align-self: center; color: var(--accent); font-weight: 900; font-size: 1.3rem; }
+@media (max-width: 640px) {
+  .flow { flex-direction: column; }
+  .flow .arrow { transform: rotate(90deg); margin: -4px auto; }
+}
+
+/* ===== 단계 카드 ===== */
+.steps { display: flex; flex-direction: column; gap: 14px; }
+.step { position: relative; transition: border-color .2s, background .2s; }
+.step.done { border-color: var(--good); }
+.step-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.badge {
+  flex: none; width: 2.2em; height: 2.2em; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-fg); font-weight: 800;
+}
+.step.done .badge { background: var(--good); }
+.step h3 { font-size: 1.15rem; flex: 1 1 200px; }
+.time { font-size: .8rem; color: var(--muted); background: var(--code-bg); padding: 2px 10px; border-radius: 99px; }
+.step ol { margin: 12px 0 0; padding-left: 1.3em; }
+.step li { margin: 4px 0; }
+.ok-line { margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--good-soft); color: var(--good); font-size: .95rem; }
+.tip { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); font-size: .95rem; }
+.warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: .95rem; }
+.key { color: var(--accent-strong); font-weight: 700; }
+
+/* 체크 버튼 */
+.check {
+  margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  font: inherit; font-weight: 700; border-radius: 10px; padding: 8px 14px;
+  border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
+}
+.check[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+.check:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ===== 표 ===== */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 480px; }
+th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--accent-soft); font-size: .9rem; }
+tr:last-child td { border-bottom: none; }
+td.yes { color: var(--good); font-weight: 700; }
+td.no { color: var(--bad); font-weight: 700; }
+
+/* ===== 배포 전 점검표 ===== */
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist label {
+  display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+}
+.checklist input { width: 1.2em; height: 1.2em; margin-top: .3em; accent-color: var(--good); flex: none; }
+.checklist input:checked + span { color: var(--muted); text-decoration: line-through; }
+.result { margin-top: 12px; font-weight: 700; padding: 10px 14px; border-radius: 10px; }
+.result.ready { background: var(--good-soft); color: var(--good); }
+.result.notyet { background: var(--warn-soft); color: var(--warn); }
+
+/* ===== 막혔을 때 (펼치기) ===== */
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; }
+summary { cursor: pointer; padding: 14px 16px; font-weight: 700; list-style: none; display: flex; gap: 10px; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸"; color: var(--accent); transition: transform .2s; }
+details[open] summary::before { transform: rotate(90deg); }
+details .body { padding: 0 16px 14px 36px; color: var(--muted); }
+details .body p { margin: 0; }
+
+/* ===== 용어 카드 ===== */
+.terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.terms .card b { display: block; font-size: 1.05rem; }
+.terms .card small { color: var(--accent); font-weight: 700; }
+.terms .card p { margin: 6px 0 0; color: var(--muted); font-size: .95rem; }
+
+/* ===== 코드 블록 (본과정 예고) ===== */
+pre {
+  margin: 0; background: #1e1b3a; color: #e6e5ff; border-radius: var(--radius);
+  padding: 18px 20px; overflow-x: auto; font-family: "Consolas", ui-monospace, monospace; line-height: 1.9;
+}
+pre .c { color: #9c9ad0; }
+
+/* ===== localStorage 안내 박스 ===== */
+.storage { border: 1.5px dashed var(--accent); background: var(--accent-soft); }
+.storage p { margin: 6px 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.btn {
+  font: inherit; font-weight: 700; cursor: pointer; border-radius: 10px; padding: 10px 16px;
+  border: 1.5px solid var(--accent); background: var(--accent); color: var(--accent-fg);
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+
+footer { padding: 48px 0 64px; color: var(--muted); font-size: .9rem; text-align: center; }
+footer p { margin: 4px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .bar i, .step, summary::before { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 상단 진행 바: 단계 체크 수에 따라 채워짐 ===== -->
+<div class="topbar" aria-live="polite">
+  <div class="wrap">
+    <strong>오늘의 진행</strong>
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+    <span class="pct" id="pctTxt">0%</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ===== 첫 화면 ===== -->
+  <header class="hero">
+    <p class="eyebrow">선수학습 5일차 · GitHub Pages</p>
+    <h1>내 페이지를<br><span>인터넷에 올리기</span></h1>
+    <p class="lead">Claude Artifacts로 만든 페이지를 <b>누구나 열 수 있는 인터넷 주소</b>로 바꿔 봅니다. 결제도, 서버도, 명령어도 필요 없습니다.</p>
+    <div class="url" aria-label="오늘 만들 주소 형식">🌐 https://<b>내아이디</b>.github.io/<b>my-first-page</b>/</div>
+
+    <div class="analogy">
+      <div class="card"><span class="emoji" aria-hidden="true">🗄️</span><div><b>GitHub = 작품 보관 창고</b><p>파일을 보관하고, 언제 무엇을 바꿨는지 기록까지 남깁니다.</p></div></div>
+      <div class="card"><span class="emoji" aria-hidden="true">🖼️</span><div><b>GitHub Pages = 갤러리</b><p>창고에 있는 HTML을 인터넷에 무료로 전시해 줍니다.</p></div></div>
+    </div>
+  </header>
+
+  <!-- ===== 오늘의 흐름 ===== -->
+  <section aria-labelledby="flowTitle">
+    <h2 id="flowTitle">오늘의 흐름</h2>
+    <p class="sub">다섯 칸만 기억하면 됩니다.</p>
+    <div class="flow">
+      <div class="node"><span class="emoji" aria-hidden="true">🤖</span><b>Claude Artifact</b><small>만들기</small></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node"><span class="emoji" aria-hidden="true">📄</span><b>index.html</b><small>파일 준비</small></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node"><span class="emoji" aria-hidden="true">🗄️</span><b>GitHub 저장소</b><small>올리기(커밋)</small></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node"><span class="emoji" aria-hidden="true">⚙️</span><b>Pages 켜기</b><small>배포</small></div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="node goal"><span class="emoji" aria-hidden="true">🎉</span><b>내 주소</b><small>공유</small></div>
+    </div>
+  </section>
+
+  <!-- ===== 단계별 실습 ===== -->
+  <section aria-labelledby="stepTitle">
+    <h2 id="stepTitle">단계별 실습</h2>
+    <p class="sub">한 단계를 끝낼 때마다 <b>했어요</b> 버튼을 누르세요. 위쪽 진행 바가 채워집니다.</p>
+
+    <div class="steps" id="steps">
+
+      <article class="card step" data-step="s0">
+        <div class="step-head"><span class="badge">0</span><h3>파일 확장자 보이게 하기</h3><span class="time">3분</span></div>
+        <ol>
+          <li>파일 탐색기를 엽니다. (<code>Windows 키 + E</code>)</li>
+          <li><span class="key">보기 → 표시 → 파일 확장명</span>을 체크합니다.</li>
+        </ol>
+        <p class="tip">💡 이걸 안 하면 <code>index.html.html</code>처럼 이름이 꼬이는 실수가 자주 생깁니다.</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s1">
+        <div class="step-head"><span class="badge">1</span><h3>올릴 파일 준비하기</h3><span class="time">15분</span></div>
+        <ol>
+          <li>Artifact 옆 창에서 <span class="key">다운로드</span>를 누릅니다. (안 보이면 <span class="key">⋯</span> 메뉴)</li>
+          <li>파일 이름을 정확히 <code>index.html</code>로 바꿉니다. 전부 소문자, 띄어쓰기 없이 씁니다.</li>
+          <li>파일을 <b>더블클릭</b>해서 브라우저에 화면이 나오는지 확인합니다. (리허설)</li>
+        </ol>
+        <p class="warn">⚠️ 하얀 빈 화면이 나오면 React 형식입니다. 템플릿 B로 <b>순수 HTML 한 파일</b>로 다시 받으세요.</p>
+        <p class="tip">💡 내 PC에서 안 열리는 파일은 인터넷에서도 안 열립니다.</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s2">
+        <div class="step-head"><span class="badge">2</span><h3>저장소 만들기</h3><span class="time">10분</span></div>
+        <ol>
+          <li>github.com 오른쪽 위 <span class="key">+ → New repository</span>를 누릅니다.</li>
+          <li>Repository name에 <code>my-first-page</code>를 적습니다.</li>
+          <li><span class="key">Public</span>을 고르고, <span class="key">Add README</span>를 켭니다.</li>
+          <li><span class="key">Create repository</span>를 누릅니다.</li>
+        </ol>
+        <p class="ok-line">✅ 주소창이 <code>github.com/내아이디/my-first-page</code>이면 성공입니다.</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s3">
+        <div class="step-head"><span class="badge">3</span><h3>파일 올리기 = 첫 번째 커밋</h3><span class="time">10분</span></div>
+        <ol>
+          <li><span class="key">Add file → Upload files</span>를 누릅니다.</li>
+          <li><code>index.html</code>을 점선 상자에 끌어다 놓습니다.</li>
+          <li>메시지 칸에 <code>첫 페이지 올리기</code>를 적고 <span class="key">Commit changes</span>를 누릅니다.</li>
+        </ol>
+        <p class="tip">💡 <b>커밋 = 저장 버튼 + 메모.</b> 게임의 세이브 포인트처럼 언제든 이 시점으로 돌아올 수 있습니다.</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s4">
+        <div class="step-head"><span class="badge">4</span><h3>GitHub Pages 켜기</h3><span class="time">10분</span></div>
+        <ol>
+          <li>저장소 위쪽 <span class="key">Settings</span> 탭을 누릅니다.</li>
+          <li>왼쪽 메뉴 <span class="key">Pages</span>를 누릅니다.</li>
+          <li>Source는 <span class="key">Deploy from a branch</span>, Branch는 <span class="key">main</span>과 <span class="key">/ (root)</span>를 고릅니다.</li>
+          <li><span class="key">Save</span>를 누릅니다.</li>
+        </ol>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s5">
+        <div class="step-head"><span class="badge">5</span><h3>내 주소로 접속하기</h3><span class="time">10분</span></div>
+        <ol>
+          <li>1~3분 기다립니다. <span class="key">Actions</span> 탭에서 🟡이 ✅로 바뀌는지 봅니다.</li>
+          <li><span class="key">Settings → Pages</span>를 새로고침하고 <span class="key">Visit site</span>를 누릅니다.</li>
+          <li>주소를 휴대폰으로도 열어 보고, 짝꿍에게 보내 봅니다.</li>
+        </ol>
+        <p class="ok-line">✅ 내 페이지가 열리면 성공입니다! 🎉</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+      <article class="card step" data-step="s6">
+        <div class="step-head"><span class="badge">6</span><h3>고쳐서 다시 올리기 — Git의 진짜 힘</h3><span class="time">20분</span></div>
+        <ol>
+          <li>Claude에게 템플릿 C로 수정을 요청하고, 새 <code>index.html</code>을 받습니다.</li>
+          <li>같은 이름으로 다시 업로드하고, <code>배경색 변경</code>처럼 메시지를 적어 커밋합니다.</li>
+          <li>1~3분 뒤 <code>Ctrl + F5</code>로 확인합니다.</li>
+          <li><span class="key">🕒 Commits</span>를 눌러 <b style="color:var(--bad)">빨간 줄</b>(지운 것)과 <b style="color:var(--good)">초록 줄</b>(넣은 것)을 비교합니다.</li>
+        </ol>
+        <p class="tip">💡 이것이 <b>버전 관리</b>입니다. 본과정에서 5명이 한 코드를 함께 고칠 수 있는 이유입니다.</p>
+        <button type="button" class="check" aria-pressed="false">☐ 했어요</button>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===== 옆 창 vs 어디서나 ===== -->
+  <section aria-labelledby="cmpTitle">
+    <h2 id="cmpTitle">왜 "index.html 한 파일"이어야 할까?</h2>
+    <p class="sub">Claude 옆 창에서 잘 보여도, 파일로 받으면 안 열릴 수 있습니다.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>구분</th><th>옆 창에서만 되는 것</th><th>어디서나 열리는 것 (오늘 목표)</th></tr></thead>
+        <tbody>
+          <tr><td>형식</td><td class="no">React / JSX / TypeScript</td><td class="yes">순수 HTML + CSS + JavaScript</td></tr>
+          <tr><td>파일</td><td class="no">여러 개 (src/, package.json …)</td><td class="yes">index.html 하나</td></tr>
+          <tr><td>여는 방법</td><td class="no">빌드(조립) 필요</td><td class="yes">더블클릭</td></tr>
+          <tr><td>비유</td><td>조립 설명서 + 부품 상자</td><td>완성된 장난감</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 배포 전 점검표 ===== -->
+  <section aria-labelledby="preTitle">
+    <h2 id="preTitle">올리기 전 점검표</h2>
+    <p class="sub">여섯 개가 모두 체크되면 올려도 됩니다.</p>
+    <ul class="checklist" id="preList">
+      <li><label><input type="checkbox" data-pre="p1"><span><b>파일 하나</b>: 다른 파일(이미지, css, js)을 따로 불러오지 않는다</span></label></li>
+      <li><label><input type="checkbox" data-pre="p2"><span><b>React 없음</b>: <code>.jsx</code>, <code>.tsx</code>, <code>import React</code>가 없다</span></label></li>
+      <li><label><input type="checkbox" data-pre="p3"><span><b>UTF-8</b>: <code>&lt;meta charset="UTF-8"&gt;</code>이 있어 한글이 깨지지 않는다</span></label></li>
+      <li><label><input type="checkbox" data-pre="p4"><span><b>https</b>: 외부 주소(CDN)가 모두 <code>https://</code>로 시작한다</span></label></li>
+      <li><label><input type="checkbox" data-pre="p5"><span><b>개인정보 없음</b>: 실명 전체, 연락처, 비밀번호, API 키가 없다</span></label></li>
+      <li><label><input type="checkbox" data-pre="p6"><span><b>리허설</b>: 내 PC에서 더블클릭해서 먼저 열어 봤다</span></label></li>
+    </ul>
+    <p class="result notyet" id="preResult" aria-live="polite">아직 6개 중 0개 확인했어요.</p>
+  </section>
+
+  <!-- ===== 버튼 ↔ 명령어 ===== -->
+  <section aria-labelledby="cmdTitle">
+    <h2 id="cmdTitle">오늘 누른 버튼 = 본과정 명령어</h2>
+    <p class="sub">오늘은 버튼으로, 본과정에서는 명령어로 같은 일을 합니다.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>오늘 누른 버튼</th><th>하는 일</th><th>본과정 명령어</th></tr></thead>
+        <tbody>
+          <tr><td>Upload files</td><td>올릴 파일 고르기</td><td><code>git add .</code></td></tr>
+          <tr><td>Commit changes + 메시지</td><td>메모를 달아 세이브</td><td><code>git commit -m "메시지"</code></td></tr>
+          <tr><td>(업로드하면 바로 반영)</td><td>내 PC → GitHub로 보내기</td><td><code>git push</code></td></tr>
+          <tr><td>🕒 Commits</td><td>기록 보기</td><td><code>git log</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre aria-label="본과정에서 쓸 Git 명령어 예시"><span class="c"># 본과정 예고: 오늘 누른 버튼 세 번이 이 세 줄입니다</span>
+git add .
+git commit -m "배경색 변경"
+git push</pre>
+  </section>
+
+  <!-- ===== 막혔을 때 ===== -->
+  <section aria-labelledby="helpTitle">
+    <h2 id="helpTitle">막혔을 때</h2>
+    <p class="sub">증상을 눌러 해결 방법을 확인하세요.</p>
+    <details><summary>404 "There isn't a GitHub Pages site here"</summary><div class="body"><p>① 1~3분 더 기다리고 Actions가 ✅인지 확인 ② 파일 이름이 정확히 <code>index.html</code>(소문자)인지 ③ 파일이 폴더 안이 아니라 저장소 맨 바깥에 있는지 확인하세요.</p></div></details>
+    <details><summary>내 페이지 대신 README 내용이 보여요</summary><div class="body"><p><code>index.html</code>이 없거나 이름이 틀렸습니다. 파일 목록에서 이름을 확인하세요.</p></div></details>
+    <details><summary>하얀 빈 화면만 나와요</summary><div class="body"><p>React 형식입니다. 템플릿 B로 순수 HTML 한 파일로 다시 만드세요. 그래도 안 되면 <code>F12</code> → Console의 빨간 글씨를 캡처해서 Claude에게 보여 주세요.</p></div></details>
+    <details><summary>한글이 'ê°€'처럼 깨져요</summary><div class="body"><p><code>&lt;meta charset="UTF-8"&gt;</code>이 있는지, 메모장에 저장할 때 인코딩을 UTF-8로 골랐는지 확인하세요.</p></div></details>
+    <details><summary>고쳤는데 화면이 그대로예요</summary><div class="body"><p>1~3분 기다린 뒤 <code>Ctrl + F5</code>를 누르세요. 브라우저가 예전 화면을 기억하고 있는 것입니다.</p></div></details>
+    <details><summary>파일 이름이 index.html.html 또는 index.html.txt예요</summary><div class="body"><p>0단계(확장자 보이기)를 하고 이름을 고친 뒤 다시 올리세요.</p></div></details>
+    <details><summary>zip 파일을 올렸어요</summary><div class="body"><p>GitHub는 압축을 풀어 주지 않습니다. 압축을 풀고 <code>index.html</code>만 올리세요.</p></div></details>
+    <details><summary>Pages 화면에 업그레이드 안내가 떠요</summary><div class="body"><p>저장소가 Private입니다. Public으로 새 저장소를 만드는 것이 가장 빠릅니다.</p></div></details>
+  </section>
+
+  <!-- ===== 오늘 쓴 말 ===== -->
+  <section aria-labelledby="termTitle">
+    <h2 id="termTitle">오늘 쓴 말 다섯 개</h2>
+    <p class="sub">외우지 말고, 비유로 기억하세요.</p>
+    <div class="terms">
+      <div class="card"><small>Repository</small><b>저장소</b><p>프로젝트 파일을 담는 창고 한 칸</p></div>
+      <div class="card"><small>Commit</small><b>커밋</b><p>저장 버튼 + 메모. 게임의 세이브 포인트</p></div>
+      <div class="card"><small>Branch / main</small><b>브랜치</b><p>작업 줄기. main은 기본 줄기</p></div>
+      <div class="card"><small>Deploy</small><b>배포</b><p>내 PC 속 결과물을 인터넷에 내거는 것</p></div>
+      <div class="card"><small>GitHub Pages</small><b>깃허브 페이지</b><p>저장소의 HTML을 무료로 전시해 주는 갤러리</p></div>
+    </div>
+  </section>
+
+  <!-- ===== localStorage 체험 ===== -->
+  <section aria-labelledby="lsTitle">
+    <div class="card storage">
+      <h2 id="lsTitle">🔍 직접 확인해 보세요</h2>
+      <p>이 페이지의 <b>했어요</b> 체크와 점검표는 <b>localStorage</b>, 즉 <b>내 브라우저 안 서랍</b>에 저장됩니다.</p>
+      <p>새로고침해도 남아 있지만, <b>짝꿍 휴대폰으로 같은 주소를 열면 비어 있습니다.</b> 모두가 같은 데이터를 보려면 <b>서버와 DB</b>가 필요하고, 그것을 본과정에서 배웁니다.</p>
+      <div class="row">
+        <button type="button" class="btn ghost" id="resetBtn">체크 모두 지우기</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>이 페이지는 <b>index.html 파일 하나</b>로 만들어졌습니다. 마우스 오른쪽 버튼 → <b>페이지 소스 보기</b>로 코드를 확인해 보세요.</p>
+    <p>선수학습 5일차 · 생성형 AI 코딩 기반 엔터테인먼트 플랫폼 엔지니어 양성과정</p>
+  </div>
+</footer>
+
+<script>
+// ===== 저장 키: 내 브라우저(localStorage)에만 저장됨 =====
+var STORAGE_KEY = "deploy-lesson-progress-v1";
+
+// 저장된 상태 읽기 (실패하거나 비어 있으면 빈 객체)
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+// 상태 저장하기 (사생활 보호 모드 등에서 실패해도 페이지는 계속 동작)
+function saveState(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    /* 저장 실패는 무시 */
+  }
+}
+
+var state = loadState();
+var stepCards = document.querySelectorAll(".step");
+var preBoxes = document.querySelectorAll("#preList input");
+
+// 단계 카드 한 개의 화면 모양 바꾸기
+function paintStep(card, done) {
+  var btn = card.querySelector(".check");
+  card.classList.toggle("done", done);
+  btn.setAttribute("aria-pressed", done ? "true" : "false");
+  btn.textContent = done ? "✔ 완료했어요" : "☐ 했어요";
+}
+
+// 상단 진행 바 갱신
+function updateProgress() {
+  var done = 0;
+  stepCards.forEach(function (card) {
+    if (state[card.dataset.step]) done++;
+  });
+  var pct = Math.round(done / stepCards.length * 100);
+  document.getElementById("barFill").style.width = pct + "%";
+  document.getElementById("pctTxt").textContent = pct + "%";
+}
+
+// 점검표 결과 문구 갱신
+function updatePre() {
+  var count = 0;
+  preBoxes.forEach(function (box) { if (box.checked) count++; });
+  var result = document.getElementById("preResult");
+  if (count === preBoxes.length) {
+    result.className = "result ready";
+    result.textContent = "🚀 모두 확인했어요! 이제 GitHub에 올려도 됩니다.";
+  } else {
+    result.className = "result notyet";
+    result.textContent = "아직 " + preBoxes.length + "개 중 " + count + "개 확인했어요.";
+  }
+}
+
+// 단계 버튼 연결
+stepCards.forEach(function (card) {
+  var key = card.dataset.step;
+  paintStep(card, !!state[key]);
+  card.querySelector(".check").addEventListener("click", function () {
+    state[key] = !state[key];
+    saveState(state);
+    paintStep(card, state[key]);
+    updateProgress();
+  });
+});
+
+// 점검표 체크박스 연결
+preBoxes.forEach(function (box) {
+  var key = box.dataset.pre;
+  box.checked = !!state[key];
+  box.addEventListener("change", function () {
+    state[key] = box.checked;
+    saveState(state);
+    updatePre();
+  });
+});
+
+// 모두 지우기 버튼
+document.getElementById("resetBtn").addEventListener("click", function () {
+  state = {};
+  saveState(state);
+  stepCards.forEach(function (card) { paintStep(card, false); });
+  preBoxes.forEach(function (box) { box.checked = false; });
+  updateProgress();
+  updatePre();
+});
+
+// 처음 열었을 때 화면 맞추기
+updateProgress();
+updatePre();
+</script>
+</body>
+</html>
